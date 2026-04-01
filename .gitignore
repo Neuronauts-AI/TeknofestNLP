@@ -1,0 +1,23 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# OS/editor
+.DS_Store
+Thumbs.db
+
+# Local runtime/cache artifacts
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Model and benchmark outputs
+data/raw/audio_samples/
+data/processed/*.json
+data/processed/asr_results.json
+data/processed/*.log
+
+# Hugging Face / local download leftovers if copied into repo
+*.incomplete

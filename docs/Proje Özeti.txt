@@ -1,0 +1,50 @@
+NEURONAUTS AI - PROJE DURUM ÖZETİ
+
+Bu projede şu ana kadar Türkçe klinik NLP odaklı bir rapor üretim ve değerlendirme prototipi geliştirildi.
+
+1. Veri hazırlığı
+- MIMIC-CXR kaynaklı rapor verileri çekildi.
+- Metin odaklı CSV çıktıları üretildi.
+- Türkçe rapor verisi oluşturuldu ve module1 veri klasörüne düzenli şekilde hazırlandı.
+
+2. Modül 1 - Rapor üretim demo katmanı
+- FastAPI tabanlı bir backend kuruldu.
+- Tarayıcı üzerinden kullanılan bir demo arayüzü eklendi.
+- Kullanıcı Bulgular ve Sonuç alanlarını doldurup rapor üretebiliyor.
+- Örnek veri yükleme, rapor geçmişi ve canlı akış iskeleti hazır.
+
+3. Rapor gerçeklik / uygunluk değerlendirmesi
+- Hastalık sınıflandırma yaklaşımı projeden çıkarıldı.
+- Bunun yerine, raporun gerçek bir Türkçe radyoloji raporu gibi görünüp görünmediğini değerlendiren bir Ollama tabanlı sınıflandırma katmanı kuruldu.
+- Referans rapor üslubu proje içinde metin dosyası olarak tutuluyor.
+- Promptlar ayrı dosyalara ayrıldı ve düzenlenebilir hale getirildi.
+
+4. Canlı uyarı sistemi
+- Rapor metni üzerinden LLM tabanlı canlı kritik bulgu/uyarı çıkarma katmanı eklendi.
+- Uyarılar UI içinde gösteriliyor.
+- Present / uncertain / absent durumları Türkçeleştirildi ve filtrelenebilir hale getirildi.
+
+5. Sesli giriş ve ASR çalışmaları
+- Whisper tabanlı ASR akışı eklendi.
+- Mikrofon kaydı ve ses dosyası yükleme ile transkript alma özelliği kuruldu.
+- Varsayılan ASR modeli Whisper large-v3 olarak ayarlandı.
+- Sesli akışta LLM ile yeniden yazım veya düzeltme yapılmıyor.
+- Kullanıcı konuşurken "Bulgular" ve "Sonuç" başlıklarını söylediğinde metin bu başlıklara göre ayrılıyor.
+
+6. Gözlenen mevcut durum
+- Sistem teknik olarak uçtan uca çalışıyor: ses -> transkript -> alanlar -> rapor -> değerlendirme -> canlı uyarı.
+- Ancak düşük kaliteli veya anlaşılması zor seste asıl darboğaz halen ASR doğruluğu.
+- Yani sorun daha çok ayrıştırma mantığında değil, transkript kalitesinde ortaya çıkıyor.
+
+7. Mevcut sınırlar
+- Kötü ses kalitesinde medikal Türkçe terimlerde bozulmalar görülebiliyor.
+- Bu bozulmalar daha sonra rapor gerçeklik skorunu ve uyarı sistemini de etkiliyor.
+- Ana akışta transcript düzeltmek için LLM kullanılmıyor; bu tercih bilinçli olarak korundu.
+
+8. Şu anki hedef
+- Sesli rapor diktesinde daha dayanıklı bir ASR davranışı ölçmek.
+- Gerekirse temiz / orta / kötü ses kalite senaryoları için benchmark yapmak.
+- UI üzerinden gerçek kullanım senaryosuna yakın testlerle kalibrasyon sağlamak.
+
+Kısa sonuç:
+Proje şu an çalışan bir MVP/prototip seviyesindedir. Metin tabanlı rapor akışı, rapor gerçeklik değerlendirmesi, canlı uyarı sistemi ve temel sesli giriş zinciri kurulmuştur. Bundan sonraki ana gelişim alanı, zor ses koşullarında ASR doğruluğunu artırmak ve sesli dikte deneyimini daha sağlam hale getirmektir.
