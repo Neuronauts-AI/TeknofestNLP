@@ -14,6 +14,7 @@ Thumbs.db
 .ruff_cache/
 
 # Model and benchmark outputs
+data/raw/images/
 data/raw/audio_samples/
 data/processed/*.json
 data/processed/asr_results.json
