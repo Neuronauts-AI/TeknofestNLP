@@ -3,7 +3,9 @@
 Bu modül, Türkçeye çevrilmiş radyoloji raporlarında benzer vaka araması yapmak için
 Ollama üzerindeki `qwen3-embedding:0.6b` modelini kullanır.
 
-Şimdilik ana uygulamaya bağlı değildir. Önce deneysel olarak test edilir.
+Bu deneysel script korunmaktadır, ancak semantik aramanın kendisi artık ana uygulamaya da
+alınmıştır. Ana uygulamada semantik arama ayrı panelden, kullanıcının elle girdiği sorgu ile
+çalışır.
 
 ## Ne yapar?
 

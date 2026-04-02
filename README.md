@@ -62,10 +62,10 @@ Bu repo Apache License 2.0 ile lisanslanmistir. Ayrintilar icin [LICENSE](LICENS
 
 ### Deneysel Bilesenler
 
-- Ollama ile rapor uslubu siniflandirmasi icin ayri deneysel script eklendi.
+- Ollama ile rapor uslubu siniflandirmasi icin ayri deneysel script korunuyor.
 - ASR dayaniklilik testi icin benchmark scripti eklendi.
-- Ayri deneysel kalite kontrol modulu eklendi.
-- Ayri deneysel semantik arama modulu kurulup ardindan ana uygulamaya alindi.
+- Kalite kontrol modulu once deneysel olarak kalibre edildi, ardindan ana uygulamaya alindi.
+- Semantik arama once deneysel olarak kuruldu, ardindan ana uygulamaya alindi.
 
 ## Mevcut Durum
 
@@ -77,14 +77,16 @@ Uctan uca mevcut akis:
 2. Sistem `Bulgular` ve `Sonuc` alanlarini doldurur
 3. Rapor olusturulur
 4. Raporun Turkce radyoloji uslubuna uygunlugu degerlendirilir
-5. Canli kritik uyari sinyalleri uretilebilir
-6. Benzer vaka aramasi yapilabilir
-7. Islem audit loguna kaydedilir
+5. Kalite kontrol skoru ve alt skorlar uretilir
+6. Canli kritik uyari sinyalleri uretilebilir
+7. Kullanici ayri panelden manuel semantik arama yapabilir
+8. Islem audit loguna kaydedilir
 
 Mevcut temel sinir:
 
 - Dusuk kaliteli veya anlasilmasi zor seste medikal Turkce terimlerde bozulmalar gorulebiliyor.
 - Bu durum sonraki rapor uygunluk skoru ve uyari sistemini de etkiliyor.
+- Semantik arama otomatik degil; kullanici sorguyu elle girerek ayri panelden calistirir.
 
 ## Yapilacaklar
 

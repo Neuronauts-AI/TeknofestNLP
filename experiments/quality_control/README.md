@@ -1,21 +1,22 @@
-# Deneysel Kalite Kontrol Modulu
+# Deneysel Kalite Kontrol Modülü
 
-Bu klasor, ana uygulamadan bagimsiz olarak rapor kalite kontrolu ve skorlama denemeleri icin ayrilmistir.
+Bu klasör, ana uygulamadan bağımsız olarak rapor kalite kontrolü ve skorlama denemeleri için ayrılmıştır.
 
-Amac:
+Amaç:
 
-- mevcut Turkce rapor metinlerini otomatik degerlendirmek
-- alt skorlar uretmek
-- eksik veya zayif alanlari kisa notlarla raporlamak
-- sonuc tatmin ediciyse ana uygulamaya tasimak
+- mevcut Türkçe rapor metinlerini otomatik değerlendirmek
+- alt skorlar üretmek
+- eksik veya zayıf alanları kısa notlarla raporlamak
+- sonuç tatmin ediciyse ana uygulamaya taşımak
 
-Bu modulte su anda Ollama tabanli tek script vardir:
+Bu modüldeki kalibre edilmiş sürüm artık ana uygulamada da kullanılmaktadır. Buradaki script,
+toplu test ve ayrı denemeler için korunur.
 
 ```bash
 python experiments\quality_control\run_quality_control.py --findings "..." --impression "..."
 ```
 
-Desteklenen ciktilar:
+Desteklenen çıktılar:
 
 - `overall_label`
 - `overall_score`
@@ -25,8 +26,3 @@ Desteklenen ciktilar:
 - `sonuc_yeterliligi`
 - `issues`
 - `summary`
-
-Not:
-
-- Bu klasor deneyseldir.
-- Ana uygulama bu modulu henuz kullanmaz.
