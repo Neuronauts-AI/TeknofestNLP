@@ -3,6 +3,7 @@ import json
 import random
 import tempfile
 from collections import deque
+from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
@@ -16,6 +17,10 @@ from app.module2.ollama_style_client import (
     classify_report_style_with_ollama,
 )
 from app.module2.ollama_critical_alerts import classify_critical_alerts
+from app.module2.quality_control_client import (
+    DEFAULT_MODEL as DEFAULT_QUALITY_CONTROL_MODEL,
+    classify_quality_control,
+)
 from app.module2.semantic_search_client import (
     DEFAULT_EMBED_MODEL,
     semantic_search,
@@ -24,6 +29,7 @@ from app.module2.semantic_search_client import (
 
 app = FastAPI(title="Module 1 - Report Generation API", version="0.5.0")
 DATASET_PATH = Path("data/processed/module1/all.csv")
+AUDIT_LOG_PATH = Path("data/processed/audit_logs/module1_audit_log.jsonl")
 REPORT_HISTORY_LIMIT = 20
 report_history: deque[dict] = deque(maxlen=REPORT_HISTORY_LIMIT)
 
@@ -45,8 +51,8 @@ class ReportRequest(BaseModel):
 class ReportResponse(BaseModel):
     report: str
     ollama_style: OllamaStylePayload
+    quality_control: dict
     critical_alerts: dict
-    semantic_search: dict
 
 
 class AsrResponse(BaseModel):
@@ -57,8 +63,8 @@ class AsrResponse(BaseModel):
     model_id: str
     backend: str
     ollama_style: OllamaStylePayload
+    quality_control: dict
     critical_alerts: dict
-    semantic_search: dict
 
 
 class SemanticSearchRequest(BaseModel):
@@ -80,11 +86,25 @@ class HistoryItem(BaseModel):
     impression: str
     report: str
     ollama_style: OllamaStylePayload
+    quality_control: dict
     critical_alerts: dict
 
 
 class HistoryResponse(BaseModel):
     items: list[HistoryItem]
+
+
+class AuditLogItem(BaseModel):
+    timestamp: str
+    event_type: str
+    findings: str = ""
+    impression: str = ""
+    report: str = ""
+    extra: dict = {}
+
+
+class AuditLogResponse(BaseModel):
+    items: list[AuditLogItem]
 
 
 def build_report(findings: str, impression: str) -> str:
@@ -98,6 +118,35 @@ def build_report(findings: str, impression: str) -> str:
         sections.append(f"Sonuç:\n{impression}")
 
     return "\n\n".join(sections)
+
+
+def append_audit_log(
+    event_type: str,
+    findings: str = "",
+    impression: str = "",
+    report: str = "",
+    extra: dict | None = None,
+) -> None:
+    AUDIT_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "event_type": event_type,
+        "findings": findings,
+        "impression": impression,
+        "report": report,
+        "extra": extra or {},
+    }
+    with AUDIT_LOG_PATH.open("a", encoding="utf-8") as log_file:
+        log_file.write(json.dumps(payload, ensure_ascii=False) + "\n")
+
+
+def load_recent_audit_logs(limit: int = 20) -> list[dict]:
+    if not AUDIT_LOG_PATH.exists():
+        return []
+    with AUDIT_LOG_PATH.open("r", encoding="utf-8") as log_file:
+        lines = [line.strip() for line in log_file if line.strip()]
+    selected = lines[-limit:]
+    return [json.loads(line) for line in reversed(selected)]
 
 
 def load_sample_reports(limit: int = 5) -> list[dict[str, str]]:
@@ -156,21 +205,42 @@ def build_alerts_payload(report: str) -> dict:
     }
 
 
-def save_history(findings: str, impression: str, report: str, ollama_style: OllamaStylePayload, critical_alerts: dict) -> None:
+def build_quality_control_payload(findings: str, impression: str) -> dict:
+    result = classify_quality_control(
+        findings=findings,
+        impression=impression,
+        model=DEFAULT_QUALITY_CONTROL_MODEL,
+    )
+    return {
+        "available": result.available,
+        "model": result.model,
+        "overall_label": result.overall_label,
+        "overall_score": result.overall_score,
+        "subscores": result.subscores,
+        "issues": result.issues,
+        "summary": result.summary,
+        "error": result.error,
+    }
+
+
+def save_history(
+    findings: str,
+    impression: str,
+    report: str,
+    ollama_style: OllamaStylePayload,
+    quality_control: dict,
+    critical_alerts: dict,
+) -> None:
     report_history.appendleft(
         {
             "findings": findings,
             "impression": impression,
             "report": report,
             "ollama_style": ollama_style.model_dump(),
+            "quality_control": quality_control,
             "critical_alerts": critical_alerts,
         }
     )
-
-
-def build_semantic_search_payload(findings: str, impression: str, top_k: int = 5) -> dict:
-    query_text = impression.strip() or findings.strip()
-    return semantic_search(text=query_text, top_k=top_k, model=DEFAULT_EMBED_MODEL)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -526,6 +596,13 @@ def home() -> str:
     </div>
 
     <div class="card" style="margin-top:20px;">
+      <label>Kalite Kontrol</label>
+      <div id="quality-control-box" class="history-list">
+        <div class="tiny">Henüz kalite kontrol çalıştırılmadı.</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
       <label>Canlı Uyarılar</label>
       <div class="filter-row">
         <button type="button" class="filter-chip active" data-alert-filter="all">Tümü</button>
@@ -570,6 +647,7 @@ def home() -> str:
     const report = document.getElementById("report");
     const historyBox = document.getElementById("history");
     const ollamaStyleBox = document.getElementById("ollama-style-box");
+    const qualityControlBox = document.getElementById("quality-control-box");
     const sampleSelect = document.getElementById("sample-select");
     const alertsBox = document.getElementById("alerts-box");
     const semanticQueryEl = document.getElementById("semantic-query");
@@ -639,6 +717,7 @@ def home() -> str:
           <strong>Kayıt ${index + 1}</strong>
           <div class="tiny">${(item.report || '').replaceAll('\\n', '<br>')}</div>
           <div class="tiny" style="margin-top:8px;">Ollama: ${(item.ollama_style || {}).label || 'yok'} | Skor: ${(item.ollama_style || {}).score ?? '-'}</div>
+          <div class="tiny">Kalite: ${(item.quality_control || {}).overall_label || 'yok'} | Skor: ${(item.quality_control || {}).overall_score ?? '-'}</div>
           <div class="tiny">Uyarı sayısı: ${((item.critical_alerts || {}).alerts || []).length}</div>
         </div>
       `).join('');
@@ -667,6 +746,45 @@ def home() -> str:
           <strong>Ollama / ${data.model}</strong>
           <div class="tiny">Skor: ${data.score}</div>
           <div class="tiny">${data.reason || ''}</div>
+        </div>
+      `;
+    }
+
+    function renderQualityControl(data) {
+      if (!data) {
+        qualityControlBox.innerHTML = '<div class="tiny">Henüz kalite kontrol çalıştırılmadı.</div>';
+        return;
+      }
+      if (!data.available) {
+        qualityControlBox.innerHTML = `
+          <div class="history-item">
+            <strong>Kalite kontrol kullanılamıyor</strong>
+            <div class="tiny">Model: ${data.model || '-'}</div>
+            <div class="tiny">${escapeHtml(data.summary || 'Kalite kontrol çağrısı başarısız oldu.')}</div>
+            <div class="tiny">${escapeHtml(data.error || '')}</div>
+          </div>
+        `;
+        return;
+      }
+      const pillClass =
+        data.overall_label === "uygun" ? "pill-good" :
+        data.overall_label === "sinirda" ? "pill-warn" :
+        "pill-bad";
+      const subscores = data.subscores || {};
+      const issues = Array.isArray(data.issues) ? data.issues : [];
+      qualityControlBox.innerHTML = `
+        <div class="history-item">
+          <div class="pill ${pillClass}">${escapeHtml(data.overall_label)}</div>
+          <strong>Kalite Kontrol / ${escapeHtml(data.model || '-')}</strong>
+          <div class="tiny">Genel Skor: ${data.overall_score ?? '-'}</div>
+          <div class="tiny" style="margin-top:8px;">
+            Dil: ${subscores.dil_kalitesi ?? '-'} |
+            Terminoloji: ${subscores.terminoloji_tutarliligi ?? '-'} |
+            Yapı: ${subscores.yapi_uygunlugu ?? '-'} |
+            Sonuç: ${subscores.sonuc_yeterliligi ?? '-'}
+          </div>
+          ${issues.length ? `<div class="tiny" style="margin-top:8px;">Sorunlar: ${escapeHtml(issues.join(", "))}</div>` : ""}
+          <div class="tiny" style="margin-top:8px;">${escapeHtml(data.summary || '')}</div>
         </div>
       `;
     }
@@ -765,9 +883,8 @@ def home() -> str:
       const data = await response.json();
       report.textContent = data.report || "Boş rapor döndü.";
       renderOllamaStyle(data.ollama_style);
+      renderQualityControl(data.quality_control);
       renderAlerts(data.critical_alerts);
-      renderSemanticSearch(data.semantic_search);
-      semanticQueryEl.value = data.semantic_search?.query || semanticQueryEl.value;
       await loadHistory();
     }
 
@@ -798,9 +915,8 @@ def home() -> str:
       impressionEl.value = data.impression || "";
       report.textContent = data.report || "Boş rapor döndü.";
       renderOllamaStyle(data.ollama_style);
+      renderQualityControl(data.quality_control);
       renderAlerts(data.critical_alerts);
-      renderSemanticSearch(data.semantic_search);
-      semanticQueryEl.value = data.semantic_search?.query || semanticQueryEl.value;
       await loadHistory();
       audioStatusEl.textContent = `ASR tamamlandı (${data.model_id}) ve konuşmadaki başlıklara göre alanlar dolduruldu.`;
     }
@@ -826,9 +942,8 @@ def home() -> str:
       impressionEl.value = data.impression || "";
       report.textContent = data.report || "Boş rapor döndü.";
       renderOllamaStyle(data.ollama_style);
+      renderQualityControl(data.quality_control);
       renderAlerts(data.critical_alerts);
-      renderSemanticSearch(data.semantic_search);
-      semanticQueryEl.value = data.semantic_search?.query || semanticQueryEl.value;
       await loadHistory();
       audioStatusEl.textContent = `Mikrofon kaydı çözüldü (${data.model_id}) ve konuşmadaki başlıklara göre alanlar dolduruldu.`;
     }
@@ -896,6 +1011,7 @@ def home() -> str:
         if (payload.type === "report_preview") {
           report.textContent = payload.report || "";
           renderOllamaStyle(payload.ollama_style);
+          renderQualityControl(payload.quality_control);
           renderAlerts(payload.critical_alerts);
         }
       };
@@ -911,6 +1027,7 @@ def home() -> str:
       findingsEl.value = selected.findings_tr || "";
       impressionEl.value = selected.impression_tr || "";
       report.textContent = selected.report_tr || "Örnek seçildi.";
+      renderQualityControl(null);
     });
 
     document.getElementById("generate").addEventListener("click", generateReport);
@@ -986,9 +1103,24 @@ async def transcribe_audio(
         impression = parsed_sections.impression.strip()
         report = build_report(findings, impression)
         ollama_style = build_ollama_payload(findings, impression)
+        quality_control = build_quality_control_payload(findings, impression)
         critical_alerts = build_alerts_payload(report)
-        semantic_results = build_semantic_search_payload(findings, impression)
-        save_history(findings, impression, report, ollama_style, critical_alerts)
+        save_history(findings, impression, report, ollama_style, quality_control, critical_alerts)
+        append_audit_log(
+            event_type="transcribe_audio",
+            findings=findings,
+            impression=impression,
+            report=report,
+            extra={
+                "filename": audio.filename or "",
+                "model_id": asr_result.model_id,
+                "backend": asr_result.backend,
+                "raw_text": asr_result.text,
+                "ollama_style": ollama_style.model_dump(),
+                "quality_control": quality_control,
+                "critical_alerts": critical_alerts,
+            },
+        )
         return AsrResponse(
             text=asr_result.text,
             findings=findings,
@@ -997,8 +1129,8 @@ async def transcribe_audio(
             model_id=asr_result.model_id,
             backend=asr_result.backend,
             ollama_style=ollama_style,
+            quality_control=quality_control,
             critical_alerts=critical_alerts,
-            semantic_search=semantic_results,
         )
     except RuntimeError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
@@ -1011,19 +1143,49 @@ def history() -> HistoryResponse:
     return HistoryResponse(items=[HistoryItem(**item) for item in report_history])
 
 
+@app.get("/audit-log", response_model=AuditLogResponse)
+def audit_log() -> AuditLogResponse:
+    return AuditLogResponse(items=[AuditLogItem(**item) for item in load_recent_audit_logs()])
+
+
 @app.post("/generate-report", response_model=ReportResponse)
 def generate_report(payload: ReportRequest) -> ReportResponse:
     report = build_report(payload.findings, payload.impression)
     ollama_style = build_ollama_payload(payload.findings, payload.impression)
+    quality_control = build_quality_control_payload(payload.findings, payload.impression)
     critical_alerts = build_alerts_payload(report)
-    semantic_results = build_semantic_search_payload(payload.findings, payload.impression)
-    save_history(payload.findings, payload.impression, report, ollama_style, critical_alerts)
-    return ReportResponse(report=report, ollama_style=ollama_style, critical_alerts=critical_alerts, semantic_search=semantic_results)
+    save_history(payload.findings, payload.impression, report, ollama_style, quality_control, critical_alerts)
+    append_audit_log(
+        event_type="generate_report",
+        findings=payload.findings,
+        impression=payload.impression,
+        report=report,
+        extra={
+            "ollama_style": ollama_style.model_dump(),
+            "quality_control": quality_control,
+            "critical_alerts": critical_alerts,
+        },
+    )
+    return ReportResponse(
+        report=report,
+        ollama_style=ollama_style,
+        quality_control=quality_control,
+        critical_alerts=critical_alerts,
+    )
 
 
 @app.post("/semantic-search", response_model=SemanticSearchResponse)
 def semantic_search_endpoint(payload: SemanticSearchRequest) -> SemanticSearchResponse:
     result = semantic_search(text=payload.text, top_k=payload.top_k, model=DEFAULT_EMBED_MODEL)
+    append_audit_log(
+        event_type="semantic_search",
+        extra={
+            "query": payload.text,
+            "top_k": payload.top_k,
+            "result_count": len(result.get("results", [])),
+            "model": result.get("model", DEFAULT_EMBED_MODEL),
+        },
+    )
     return SemanticSearchResponse(**result)
 
 
@@ -1038,15 +1200,15 @@ async def report_stream(websocket: WebSocket) -> None:
             impression = payload.get("impression", "")
             report = build_report(findings, impression)
             ollama_style = build_ollama_payload(findings, impression)
+            quality_control = build_quality_control_payload(findings, impression)
             critical_alerts = build_alerts_payload(report)
-            semantic_results = build_semantic_search_payload(findings, impression)
             await websocket.send_json(
                 {
                     "type": "report_preview",
                     "report": report,
                     "ollama_style": ollama_style.model_dump(),
+                    "quality_control": quality_control,
                     "critical_alerts": critical_alerts,
-                    "semantic_search": semantic_results,
                 }
             )
     except WebSocketDisconnect:

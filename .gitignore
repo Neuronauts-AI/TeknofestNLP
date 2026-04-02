@@ -19,6 +19,7 @@ data/raw/audio_samples/
 data/processed/*.json
 data/processed/asr_results.json
 data/processed/*.log
+data/processed/audit_logs/
 
 # Hugging Face / local download leftovers if copied into repo
 *.incomplete
