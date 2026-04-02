@@ -16,6 +16,10 @@ from app.module2.ollama_style_client import (
     classify_report_style_with_ollama,
 )
 from app.module2.ollama_critical_alerts import classify_critical_alerts
+from app.module2.semantic_search_client import (
+    DEFAULT_EMBED_MODEL,
+    semantic_search,
+)
 
 
 app = FastAPI(title="Module 1 - Report Generation API", version="0.5.0")
@@ -42,6 +46,7 @@ class ReportResponse(BaseModel):
     report: str
     ollama_style: OllamaStylePayload
     critical_alerts: dict
+    semantic_search: dict
 
 
 class AsrResponse(BaseModel):
@@ -53,6 +58,21 @@ class AsrResponse(BaseModel):
     backend: str
     ollama_style: OllamaStylePayload
     critical_alerts: dict
+    semantic_search: dict
+
+
+class SemanticSearchRequest(BaseModel):
+    text: str = ""
+    top_k: int = 5
+
+
+class SemanticSearchResponse(BaseModel):
+    available: bool
+    model: str
+    query: str
+    top_k: int
+    results: list[dict]
+    error: str = ""
 
 
 class HistoryItem(BaseModel):
@@ -148,6 +168,11 @@ def save_history(findings: str, impression: str, report: str, ollama_style: Olla
     )
 
 
+def build_semantic_search_payload(findings: str, impression: str, top_k: int = 5) -> dict:
+    query_text = impression.strip() or findings.strip()
+    return semantic_search(text=query_text, top_k=top_k, model=DEFAULT_EMBED_MODEL)
+
+
 @app.get("/", response_class=HTMLResponse)
 def home() -> str:
     return """
@@ -161,9 +186,11 @@ def home() -> str:
     :root {
       --bg: #f3efe6;
       --panel: #fffdf8;
+      --panel-soft: #fffaf1;
       --text: #1d1a16;
       --muted: #6f655a;
       --line: #d8ccbb;
+      --line-soft: #e7ddcf;
       --accent: #165e63;
       --accent-dark: #10474b;
       --soft: #efe5d7;
@@ -178,17 +205,17 @@ def home() -> str:
       color: var(--text);
     }
     .wrap {
-      max-width: 1180px;
+      max-width: 1240px;
       margin: 0 auto;
-      padding: 36px 20px 52px;
+      padding: 28px 20px 56px;
     }
     .hero {
       display: flex;
       flex-wrap: wrap;
-      gap: 18px;
+      gap: 20px;
       justify-content: space-between;
-      align-items: end;
-      margin-bottom: 24px;
+      align-items: center;
+      margin-bottom: 18px;
     }
     .eyebrow {
       font-size: 13px;
@@ -211,24 +238,56 @@ def home() -> str:
       margin: 0;
     }
     .badge {
-      padding: 10px 14px;
-      border-radius: 999px;
-      background: var(--soft);
+      padding: 12px 16px;
+      border-radius: 16px;
+      background: var(--panel);
+      border: 1px solid var(--line);
       color: var(--accent-dark);
       font-size: 14px;
       font-weight: 700;
+      box-shadow: 0 10px 24px rgba(60, 40, 20, 0.05);
     }
     .grid {
       display: grid;
       grid-template-columns: 1.2fr 0.8fr;
-      gap: 20px;
+      gap: 22px;
     }
     .card {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 22px;
-      padding: 20px;
-      box-shadow: 0 10px 28px rgba(60, 40, 20, 0.06);
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        padding: 22px;
+        box-shadow: 0 10px 28px rgba(60, 40, 20, 0.06);
+      }
+    .stack {
+      display: grid;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+    .status-box {
+      padding: 12px 14px;
+      border-radius: 16px;
+      border: 1px solid var(--line-soft);
+      background: linear-gradient(180deg, #fff 0%, var(--panel-soft) 100%);
+    }
+    .status-box .k {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .status-box .v {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent-dark);
     }
     .split {
       display: grid;
@@ -255,6 +314,13 @@ def home() -> str:
       line-height: 1.55;
       background: #fff;
       color: var(--text);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+    textarea:focus, select:focus, input[type="file"]:focus {
+      outline: none;
+      border-color: rgba(22, 94, 99, 0.42);
+      box-shadow: 0 0 0 4px rgba(22, 94, 99, 0.12);
+      background: #fffefb;
     }
     textarea {
       min-height: 170px;
@@ -294,6 +360,10 @@ def home() -> str:
       line-height: 1.7;
       font-size: 17px;
       min-height: 220px;
+      padding: 16px 18px;
+      border-radius: 16px;
+      border: 1px solid var(--line-soft);
+      background: linear-gradient(180deg, var(--panel-soft) 0%, #fff 100%);
     }
     .muted {
       color: var(--muted);
@@ -306,10 +376,10 @@ def home() -> str:
       margin-top: 12px;
     }
     .history-item {
-      border: 1px solid var(--line);
+      border: 1px solid var(--line-soft);
       border-radius: 14px;
       padding: 12px 14px;
-      background: #fff;
+      background: linear-gradient(180deg, #fff 0%, #fffdf9 100%);
     }
     .pill {
       display: inline-block;
@@ -377,9 +447,24 @@ def home() -> str:
       <div>
         <div class="eyebrow">Türkçe Klinik NLP Platformu</div>
         <h1>Modül 1<br>Rapor Üretim Demo Katmanı</h1>
-        <p class="sub">Metinden rapora çekirdek akış, örnek veri yükleme, rapor geçmişi ve yalnızca Ollama tabanlı gerçeklik değerlendirmesi tek ekranda.</p>
+        <p class="sub">Metinden rapora çekirdek akış, örnek veri yükleme, rapor geçmişi, semantik benzer vaka arama ve yalnızca Ollama tabanlı gerçeklik değerlendirmesi tek ekranda.</p>
       </div>
       <div class="badge" id="stream-status">Canlı akış: bağlanıyor</div>
+    </div>
+
+    <div class="status-grid">
+      <div class="status-box">
+        <div class="k">ASR</div>
+        <div class="v">Whisper large-v3</div>
+      </div>
+      <div class="status-box">
+        <div class="k">Değerlendirme</div>
+        <div class="v">Ollama / ministral-3:14b</div>
+      </div>
+      <div class="status-box">
+        <div class="k">Semantik Arama</div>
+        <div class="v">qwen3-embedding:0.6b</div>
+      </div>
     </div>
 
     <div class="grid">
@@ -454,6 +539,26 @@ def home() -> str:
     </div>
 
     <div class="card" style="margin-top:20px;">
+      <label>Semantik Arama</label>
+      <div class="split">
+        <div class="field">
+          <label for="semantic-query">Sorgu</label>
+          <textarea id="semantic-query" style="min-height:120px;"></textarea>
+        </div>
+        <div class="field">
+          <label>Sonuçlar</label>
+          <div id="semantic-results" class="history-list">
+            <div class="tiny">Henüz semantik arama yapılmadı.</div>
+          </div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="secondary" id="semantic-search-button">Benzer Vaka Ara</button>
+      </div>
+      <div class="tiny">Embedding modeli: qwen3-embedding:0.6b</div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
       <label>Son Üretilen Rapor Geçmişi</label>
       <div id="history" class="history-list">
         <div class="tiny">Henüz rapor geçmişi yok.</div>
@@ -467,6 +572,8 @@ def home() -> str:
     const ollamaStyleBox = document.getElementById("ollama-style-box");
     const sampleSelect = document.getElementById("sample-select");
     const alertsBox = document.getElementById("alerts-box");
+    const semanticQueryEl = document.getElementById("semantic-query");
+    const semanticResultsEl = document.getElementById("semantic-results");
     const alertFilterButtons = Array.from(document.querySelectorAll("[data-alert-filter]"));
     const findingsEl = document.getElementById("findings");
     const impressionEl = document.getElementById("impression");
@@ -482,6 +589,38 @@ def home() -> str:
     let latestAlertsPayload = null;
     let mediaRecorder = null;
     let recordedChunks = [];
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+    }
+
+    function renderSemanticSearch(data) {
+      if (!data) {
+        semanticResultsEl.innerHTML = '<div class="tiny">Henüz semantik arama yapılmadı.</div>';
+        return;
+      }
+      if (!data.available) {
+        semanticResultsEl.innerHTML = `<div class="tiny">Semantik arama kullanılamıyor: ${data.error || 'bilinmeyen hata'}</div>`;
+        return;
+      }
+      const items = data.results || [];
+      if (!items.length) {
+        semanticResultsEl.innerHTML = '<div class="tiny">Benzer vaka bulunamadı.</div>';
+        return;
+      }
+      semanticResultsEl.innerHTML = items.map(item => `
+        <div class="history-item">
+          <strong>Vaka ${item.row}</strong>
+          <div class="tiny">Skor: ${item.score}</div>
+          <div class="tiny"><strong>Bulgular</strong></div>
+          <div class="tiny">${escapeHtml(item.findings || "")}</div>
+          ${item.impression ? `<div class="tiny" style="margin-top:8px;"><strong>Sonuç</strong></div><div class="tiny">${escapeHtml(item.impression || "")}</div>` : ""}
+        </div>
+      `).join('');
+    }
 
     function getAlertStatusLabel(status) {
       if (status === "present") return "mevcut";
@@ -627,6 +766,8 @@ def home() -> str:
       report.textContent = data.report || "Boş rapor döndü.";
       renderOllamaStyle(data.ollama_style);
       renderAlerts(data.critical_alerts);
+      renderSemanticSearch(data.semantic_search);
+      semanticQueryEl.value = data.semantic_search?.query || semanticQueryEl.value;
       await loadHistory();
     }
 
@@ -658,6 +799,8 @@ def home() -> str:
       report.textContent = data.report || "Boş rapor döndü.";
       renderOllamaStyle(data.ollama_style);
       renderAlerts(data.critical_alerts);
+      renderSemanticSearch(data.semantic_search);
+      semanticQueryEl.value = data.semantic_search?.query || semanticQueryEl.value;
       await loadHistory();
       audioStatusEl.textContent = `ASR tamamlandı (${data.model_id}) ve konuşmadaki başlıklara göre alanlar dolduruldu.`;
     }
@@ -684,6 +827,8 @@ def home() -> str:
       report.textContent = data.report || "Boş rapor döndü.";
       renderOllamaStyle(data.ollama_style);
       renderAlerts(data.critical_alerts);
+      renderSemanticSearch(data.semantic_search);
+      semanticQueryEl.value = data.semantic_search?.query || semanticQueryEl.value;
       await loadHistory();
       audioStatusEl.textContent = `Mikrofon kaydı çözüldü (${data.model_id}) ve konuşmadaki başlıklara göre alanlar dolduruldu.`;
     }
@@ -770,6 +915,24 @@ def home() -> str:
 
     document.getElementById("generate").addEventListener("click", generateReport);
     document.getElementById("load-samples").addEventListener("click", loadSamples);
+    document.getElementById("semantic-search-button").addEventListener("click", async () => {
+      try {
+        const response = await fetch("/semantic-search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: semanticQueryEl.value, top_k: 5 })
+        });
+        if (!response.ok) {
+          const errorText = await response.text();
+          semanticResultsEl.innerHTML = `<div class="tiny">Semantik arama hatası: ${escapeHtml(errorText)}</div>`;
+          return;
+        }
+        const data = await response.json();
+        renderSemanticSearch(data);
+      } catch (error) {
+        semanticResultsEl.innerHTML = `<div class="tiny">Semantik arama hatası: ${escapeHtml(String(error))}</div>`;
+      }
+    });
     document.getElementById("transcribe-audio").addEventListener("click", transcribeAudio);
     startRecordingButton.addEventListener("click", startRecording);
     stopRecordingButton.addEventListener("click", stopRecording);
@@ -824,6 +987,7 @@ async def transcribe_audio(
         report = build_report(findings, impression)
         ollama_style = build_ollama_payload(findings, impression)
         critical_alerts = build_alerts_payload(report)
+        semantic_results = build_semantic_search_payload(findings, impression)
         save_history(findings, impression, report, ollama_style, critical_alerts)
         return AsrResponse(
             text=asr_result.text,
@@ -834,6 +998,7 @@ async def transcribe_audio(
             backend=asr_result.backend,
             ollama_style=ollama_style,
             critical_alerts=critical_alerts,
+            semantic_search=semantic_results,
         )
     except RuntimeError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
@@ -851,8 +1016,15 @@ def generate_report(payload: ReportRequest) -> ReportResponse:
     report = build_report(payload.findings, payload.impression)
     ollama_style = build_ollama_payload(payload.findings, payload.impression)
     critical_alerts = build_alerts_payload(report)
+    semantic_results = build_semantic_search_payload(payload.findings, payload.impression)
     save_history(payload.findings, payload.impression, report, ollama_style, critical_alerts)
-    return ReportResponse(report=report, ollama_style=ollama_style, critical_alerts=critical_alerts)
+    return ReportResponse(report=report, ollama_style=ollama_style, critical_alerts=critical_alerts, semantic_search=semantic_results)
+
+
+@app.post("/semantic-search", response_model=SemanticSearchResponse)
+def semantic_search_endpoint(payload: SemanticSearchRequest) -> SemanticSearchResponse:
+    result = semantic_search(text=payload.text, top_k=payload.top_k, model=DEFAULT_EMBED_MODEL)
+    return SemanticSearchResponse(**result)
 
 
 @app.websocket("/ws/report-stream")
@@ -867,12 +1039,14 @@ async def report_stream(websocket: WebSocket) -> None:
             report = build_report(findings, impression)
             ollama_style = build_ollama_payload(findings, impression)
             critical_alerts = build_alerts_payload(report)
+            semantic_results = build_semantic_search_payload(findings, impression)
             await websocket.send_json(
                 {
                     "type": "report_preview",
                     "report": report,
                     "ollama_style": ollama_style.model_dump(),
                     "critical_alerts": critical_alerts,
+                    "semantic_search": semantic_results,
                 }
             )
     except WebSocketDisconnect:
