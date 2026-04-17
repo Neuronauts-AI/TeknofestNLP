@@ -49,7 +49,12 @@ def _call_ollama(report_text: str, model: str) -> str:
     with request.urlopen(http_request, timeout=180) as response:
         body = response.read().decode("utf-8")
     parsed = json.loads(body)
-    return parsed.get("response", "").strip()
+    content = str(parsed.get("response", "")).strip()
+    if not content:
+        content = str(parsed.get("thinking", "")).strip()
+    if not content:
+        raise RuntimeError("Ollama boş yanıt döndürdü.")
+    return content
 
 
 def classify_critical_alerts(report_text: str, model: str = DEFAULT_MODEL) -> CriticalAlertResult:

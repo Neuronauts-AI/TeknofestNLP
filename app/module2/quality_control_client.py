@@ -91,7 +91,12 @@ def call_ollama(report_text: str, model: str) -> dict:
     with request.urlopen(http_request, timeout=180) as response:
         body = response.read().decode("utf-8")
     outer = json.loads(body)
-    return json.loads(outer.get("response", "{}"))
+    content = str(outer.get("response", "")).strip()
+    if not content:
+        content = str(outer.get("thinking", "")).strip()
+    if not content:
+        raise RuntimeError("Ollama boş yanıt döndürdü.")
+    return json.loads(content)
 
 
 def classify_quality_control(
