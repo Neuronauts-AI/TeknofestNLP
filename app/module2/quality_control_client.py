@@ -1,4 +1,5 @@
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from urllib import error, request
@@ -48,6 +49,20 @@ def clamp_score(value: float) -> float:
     return max(0.0, min(1.0, round(float(value), 4)))
 
 
+def normalize_issue(issue: str) -> str:
+    issue = re.sub(r"\([^)]*\)", "", issue)
+    return " ".join(issue.strip(" .;-").split())
+
+
+def should_keep_issue(issue: str) -> bool:
+    normalized = issue.lower()
+    if ("sonuc" in normalized or "sonuç" in normalized) and "eksik" in normalized:
+        return False
+    if "sayın meslektaş" in normalized or "sayin meslektas" in normalized:
+        return False
+    return bool(issue)
+
+
 def normalize_result(parsed: dict, model: str) -> QualityControlResult:
     label = str(parsed.get("overall_label", "")).strip()
     if label not in {"uygun", "sinirda", "uygun_degil"}:
@@ -60,7 +75,11 @@ def normalize_result(parsed: dict, model: str) -> QualityControlResult:
         "yapi_uygunlugu": clamp_score(subscores.get("yapi_uygunlugu", 0.0)),
         "sonuc_yeterliligi": clamp_score(subscores.get("sonuc_yeterliligi", 0.0)),
     }
-    issues = [str(item).strip() for item in parsed.get("issues", []) if str(item).strip()]
+    issues = [
+        normalized_issue
+        for item in parsed.get("issues", [])
+        if should_keep_issue(normalized_issue := normalize_issue(str(item)))
+    ]
 
     return QualityControlResult(
         available=True,

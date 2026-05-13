@@ -1,41 +1,36 @@
-Referans Türkçe radyoloji raporu üslubu:
+Referans Turkce akciger grafisi raporu uslubu:
 
-Örnek 1:
+Bu referans Neuronauts/Raporlar altindaki lokal RTF raporlarin ortak dilinden turetilmistir.
+Metinler birebir kopyalanacak sablon degildir; yalnizca ton, yapi ve klinik rapor dilini tarif eder.
 
-Sayın meslektaşım;
+Ortak yapi:
+- Baslik veya tetkik adi genellikle "AKCIGER GRAFISI" seklindedir.
+- Bazi raporlar "Sayin meslektasim;" hitabiyla baslar.
+- Bulgular kisa paragraflar halinde verilir.
+- Bazi raporlarda ayri "SONUC" bolumu vardir, bazilarinda yoktur.
+- Sonuc yoksa rapor otomatik olarak kalitesiz sayilmaz; bulgular klinik olarak yeterli ve anlasilir olabilir.
 
-Kardiyotorasik oran normal sınırlardadır.
-Mediastinal vasküler konturlar muntazamdı. Aort topuzu doğal izlenmiştir.
-Her iki diyafragma normal yükseklikte ve konturları düzgündür. Kostodiafragmatik sinüsler açıktır.
-Bilateral akciğer alanlarında aktif infiltrasyon ve kitlesel lezyon saptanmadı.
-İzlenebilen kemik yapılar ve yumuşak dokular normaldir.
+Dogal ve kabul edilebilir yerel ifade kaliplari:
+- Kardiotorasik oran fizyolojik sinirlardadir.
+- Her iki hilus konum, boyut ve opasiteleri normaldir.
+- Aort topuzu dogal izlenmistir.
+- Hemidiafragmalar normal yukseklikte ve konturlari duzgundur.
+- Kostodiafragmatik sinusler aciktir.
+- Bilateral akciger alanlarinda aktif infiltrasyon ve kitlesel lezyon saptanmadi.
+- Izlenebilen kemik yapilar ve yumusak dokularda ozellik saptanmadi.
+- Sol kostofrenik sinus kunt gorunumdedir.
+- Sag akciger alt zonda noduler tarzda buzlu cam gorunumu izlendi.
+- BT onerilir.
+- Klinik suphe dahilinde toraks BT ile tetkiki onerilir.
+- Bronkovaskuler izlerde artis veya belirginlesme izlenebilir.
+- Atelektazi supheli lineer opasite tarif edilebilir.
 
-SONUÇ:
-Normal sınırlarda Akciğer Grafisi incelemesi.
+Kalite notlari:
+- "Kardiotorasik" ve "kardiyotorasik" gibi yerel yazim farklari tek basina sorun degildir.
+- "Akciger Grafi incelemesi" gibi yerel kurum dili kabul edilebilir.
+- Harf eksilmeleri, bozuk kelimeler veya ASR/OCR kaynakli parcalanmis ifadeler az ise tolere edilebilir.
+- Harf eksilmeleri klinik anlamayi belirgin bozuyorsa dil kalitesi ve genel kalite dusurulmelidir.
+- Rapor footer/header bilgileri, doktor bilgisi, imza ve elektronik imza metinleri klinik rapor kalitesinin parcasi sayilmaz.
 
-Örnek 2:
-
-BULGULAR:
-
-KALP-TORAKS İNDEKSİ FİZYOLOJİK SINIRLARDADIR.
-MEDİASTEN TABİİ, DİAFRAGMALAR MUNTAZAM, KOSTOFRENİK SİNÜSLER AÇIKTIR.
-SAĞ AKCİĞER ALT ZONDA 5 MM ÇAPINDA NODÜLER OPASİTE DİKKATİ ÇEKMİŞTİR.
-BUNUN DIŞINDA AKCİĞER PARANKİM ALANLARINDA AKTİF PATOLOJİK LEZYON SAPTANMAMIŞTIR.
-
-SONUÇ:
-RAPOR İÇERİSİNDE TARİFLENEN BULGULAR.
-
-Örnek 3:
-
-BULGULAR:
-
-Kardiyotorasik indeks normal sınırlardadır.
-Mediasten tabii, diafragmalar muntazam, kostofrenik sinüsler açıktır.
-Akciğer parankim alanlarında aktif opasite saptanmamıştır.
-
-Değerlendirme notu:
-- Bu metinler birebir kopyalanacak şablonlar değildir.
-- Bir raporun uygun sayılması için bu örneklerle yüzde yüz aynı olması gerekmez.
-- Referans yalnızca üslup, ton, yapı ve kurumsal radyoloji dili için örnek olarak kullanılır.
-- Daha uzun, daha kısa, patolojik ya da normal raporlar da gerçek ve uygun olabilir.
-- Esas ölçüt, metnin gerçek bir Türkçe radyoloji raporu gibi mantıklı, klinik ve kurumsal görünüp görünmediğidir.
+Esas olcut:
+Metin, Turkiye'de yazilmis kisa bir akciger grafisi raporu gibi klinik, kurumsal, anlasilir ve ic tutarliliga sahip gorunmelidir.

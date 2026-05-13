@@ -1,70 +1,50 @@
-You are evaluating whether a Turkish chest radiology report matches the style and realism of the reference report below.
+You are evaluating whether a Turkish chest X-ray radiology report matches the local Neuronauts report style.
 
-Reference report style:
+Dynamic reference style from the local dataset:
 {reference_style}
 
 Classify the input report into exactly one label:
 - uygun
 - uygun_degil
 
-Main goal:
-- decide how compatible the report is with a real Turkish radiology report
-- decide whether the wording, structure, tone, and internal clinical logic feel realistic and sensible
-- only evaluate the report; do not rewrite it and do not give improvement advice
+Decision focus:
+- Decide whether the text plausibly sounds like a real Turkish chest X-ray report from this local dataset.
+- Evaluate realism, structure, formal radiology tone, concise clinical wording, and internal clinical logic.
+- Do not rewrite the report and do not give improvement advice.
 
-Important rules:
-- the report does NOT need to be 100 percent similar to the reference text
-- do NOT require the same sentence order, same length, same findings, or same level of detail
-- do NOT punish the report just because it contains abnormal findings, severe pathology, or many details
-- a report can still be `uygun` even if it describes serious disease
-- do NOT compare disease content to the reference example
-- use the reference only as a style and tone anchor, not as a rigid template
-- focus on report realism, structure, formal tone, concise clinical wording, and whether the text sounds like a plausible hospital radiology report in Turkey
-- if the report is internally inconsistent, non-clinical, casual, awkward, or not believable as a real radiology report, classify it as `uygun_degil`
-- strongly penalize translation-like wording, awkward Turkish word order, unnatural phrasing, and text that feels machine-translated
-- strongly penalize non-native phrasing, literal translations, unusual medical collocations, and sentences that sound generated instead of written by a Turkish radiologist
-- do not give very high scores unless the report sounds highly natural, fluent, and professionally written in established Turkish radiology language
-- if there is noticeable translation flavor, avoid scores above 0.85
-- do not suggest better wording
-- do not explain how the report could be rewritten
-- do not act like a doctor interpreting the finding content
-- do not give medical advice, teaching points, or editorial coaching
-- keep the explanation short, neutral, and limited to evaluation only
-- the reason must be 1 or 2 short Turkish sentences maximum
-- the reason must describe only evaluation, not correction
-- never use phrases like:
-  - "şöyle yazılabilirdi"
-  - "daha iyi olurdu"
-  - "tercih edilseydi"
-  - "yerine"
-  - "önerilir"
-  - "beklenirdi"
-  - "daha uygun olurdu"
-  - "revize edilebilir"
-  - "ifade edilebilirdi"
-- do not mention alternative wording examples
-- do not compare candidate phrasings
-- do not critique individual findings as if you are reporting the case yourself
-
-Score rubric:
-- 0.90 to 1.00: very natural, expert-level, highly realistic Turkish radiology report
-- 0.70 to 0.89: generally suitable but has minor wording or style issues
-- 0.40 to 0.69: borderline, noticeable translation flavor or unnatural phrasing
-- 0.00 to 0.39: not suitable, unrealistic or clearly non-clinical language
+Local style signals that support `uygun`:
+- A short chest X-ray report structure such as "AKCIGER GRAFISI", "Sayin meslektasim", findings paragraphs, and optional "SONUC".
+- Institutional wording such as kardiotorasik oran, hiluslar, aort topuzu, hemidiafragmalar, kostodiafragmatik sinusler, aktif infiltrasyon, kitlesel lezyon, opasite, atelektazi, bronkovaskuler izler, nodul, buzlu cam gorunumu.
+- A report may be normal or abnormal and can still be `uygun`.
+- A separate conclusion is helpful but not mandatory when the report is short and clinically self-contained.
+- Minor local spelling variation or minor RTF/ASR artefacts should not automatically make a report unsuitable.
 
 Negative signals that should reduce score:
-- translation flavor
-- unnatural Turkish syntax
-- awkward word order
-- literal translation from English
-- non-standard radiology phrasing
-- repetitive or machine-like wording
+- Severe character loss or broken words that make the clinical meaning hard to follow.
+- Casual, conversational, non-clinical, advice-like, or patient-facing language.
+- Translation-like Turkish, unnatural word order, or non-standard medical collocations.
+- Internal contradictions, unsupported claims, or a text that does not read like a radiology report.
+- Header/footer residue such as doctor name, signature, license, electronic signature text; ignore it if isolated, penalize if it dominates the input.
 
-Respond in strict JSON with exactly these keys:
+Scoring guide:
+- 0.90 to 1.00: very natural local Turkish chest X-ray report.
+- 0.70 to 0.89: report-like and usable, with minor wording or artefact issues.
+- 0.40 to 0.69: borderline; clinical intent is visible but wording/structure/noise is weak.
+- 0.00 to 0.39: not report-like, too corrupted, casual, contradictory, or clinically unusable.
+
+Label rule:
+- Use `uygun` when the report is realistically report-like and clinically understandable.
+- Use `uygun_degil` when it is not plausibly usable as a Turkish radiology report.
+
+Output rules:
+- Respond in strict JSON only.
+- The reason must be Turkish, neutral, evaluation-only, and at most one short sentence.
+- Do not suggest alternate wording.
+- Do not include markdown fences.
+
+Required JSON shape:
 {{
   "label": "uygun" or "uygun_degil",
   "score": number between 0 and 1,
-  "reason": "very short Turkish evaluation focused only on realism, style, structure, and plausibility"
+  "reason": "short Turkish evaluation"
 }}
-
-Do not include markdown fences.

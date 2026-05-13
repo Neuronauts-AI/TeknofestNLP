@@ -128,6 +128,7 @@ def extract_report_body(full_text: str) -> str:
 
     if start_match:
         text = text[start_match.end() :]
+        end_match = re.search(r"Doktor Bilgileri", text, flags=re.IGNORECASE)
     if end_match:
         text = text[: end_match.start()]
 

@@ -75,6 +75,7 @@ Bu repo Apache License 2.0 ile lisanslanmistir. Ayrintilar icin [LICENSE](LICENS
 - `app/prompts/quality_control_prompt.txt`: Dil kalitesi, terminoloji tutarliligi, yapi uygunlugu ve sonuc yeterliligi icin skor uretir.
 - `app/prompts/ollama_critical_alerts_prompt.txt`: Pnomotoraks, plevral efüzyon, nodul, infiltrasyon ve benzeri klinik onemli uyari adaylarini cikarir.
 - Bu promptlar aktif olarak `app/module2` altindaki Ollama istemcileri tarafindan kullanilir; su an gereksiz prompt dosyasi yoktur.
+- Prompt mimarisi hibrittir: gorev kurallari statik prompt dosyalarinda tutulur, veri uslubu ise `docs/reference_report_style.txt` icinden dinamik olarak prompta enjekte edilir.
 
 ## Mevcut Durum
 
