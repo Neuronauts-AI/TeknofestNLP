@@ -5,7 +5,7 @@ from urllib import error, request
 
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
-DEFAULT_MODEL = "ministral-3:14b"
+DEFAULT_MODEL = "qwen3.5:9b"
 PROMPT_PATH = Path("app/prompts/ollama_critical_alerts_prompt.txt")
 
 

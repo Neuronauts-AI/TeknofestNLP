@@ -12,6 +12,7 @@ Thumbs.db
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+Neuronauts/
 
 # Model and benchmark outputs
 data/raw/images/

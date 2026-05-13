@@ -5,7 +5,7 @@ import random
 from pathlib import Path
 
 
-DEFAULT_INPUT = Path("data/processed/mimic_cxr_text_only_tr_gemini.csv")
+DEFAULT_INPUT = Path("data/processed/mimic_cxr_text_only_tr.csv")
 DEFAULT_OUTPUT_DIR = Path("data/processed/module1")
 DEFAULT_SEED = 42
 DEFAULT_VAL_RATIO = 0.1

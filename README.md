@@ -21,7 +21,8 @@ Bu repo Apache License 2.0 ile lisanslanmistir. Ayrintilar icin [LICENSE](LICENS
 - MIMIC-CXR kaynakli rapor verileri cekildi.
 - Metin odakli CSV ciktilari uretildi.
 - Turkce rapor verisi olusturuldu.
-- Veri klasorleri `app/`, `data/`, `docs/`, `scripts/`, `experiments/` olarak duzenlendi.
+- Veri klasorleri `app/`, `data/`, `docs/`, `scripts/` olarak duzenlendi.
+- Uygulama yalnizca lokal calisan LLM/embedding modellerini kullanacak sekilde sadeleştirildi.
 
 ### Modül 1 - Rapor Uretim Demo Katmani
 
@@ -60,12 +61,13 @@ Bu repo Apache License 2.0 ile lisanslanmistir. Ayrintilar icin [LICENSE](LICENS
 - Kullanici konusurken `Bulgular` ve `Sonuc` basliklarini soylediginde metin bu basliklara gore ayriliyor.
 - Kotu kalite ses uzerinde ilk dayanıklılık testleri yapildi; ana darboğazın halen ASR kalitesi oldugu goruldu.
 
-### Deneysel Bilesenler
+### Lokal Model Katmani
 
-- Ollama ile rapor uslubu siniflandirmasi icin ayri deneysel script korunuyor.
-- ASR dayaniklilik testi icin benchmark scripti eklendi.
-- Kalite kontrol modulu once deneysel olarak kalibre edildi, ardindan ana uygulamaya alindi.
-- Semantik arama once deneysel olarak kuruldu, ardindan ana uygulamaya alindi.
+- LLM tabanli rapor uslubu, kalite kontrol ve kritik uyari akisları Ollama uzerinden lokal calisir.
+- Varsayilan LLM modeli `qwen3.5:9b` olarak ayarlandi.
+- Varsayilan embedding modeli `qwen3-embedding:0.6b` olarak ayarlandi.
+- Uzak LLM API bagimliliklari uygulama akişindan cikarildi.
+- ASR dayaniklilik testi icin benchmark scripti ana kod icinde korunuyor.
 
 ## Mevcut Durum
 
@@ -109,7 +111,7 @@ Asagidaki basliklar `proje_ozeti.docx` icindeki guncel yol haritasi baz alinarak
 ### Modül 3 - Doktor Cumle Tamamlama Asistani
 
 - Radyolog tek bir cumle soylediginde veya yazdiginda baglama uygun rapor metnini tamamlama
-- BERTurk veya ince ayarli GPT-4o tabanli tamamlama modeli
+- BERTurk veya lokal calisan ince ayarli LLM tabanli tamamlama modeli
 - Hastane ve radyolog bazli kisisellestirme
 - Hastanin gecmis tetkikleri, yas, cinsiyet ve sikayetiyle baglam zenginlestirme
 - Onay/reddetme geri bildirimiyle surekli ogrenme dongusu
@@ -138,8 +140,7 @@ data/
   raw/         Ham veri ve lokalde tutulan girdiler
   processed/   Islenmis veri ve benchmark girdileri
 docs/          Proje ozeti, referans raporlar ve stratejik belgeler
-experiments/   Deneysel scriptler
-scripts/       Yardimci veri cekme/ceviri scriptleri
+scripts/       Yardimci veri cekme ve veri goruntuleme scriptleri
 ```
 
 ## Calistirma

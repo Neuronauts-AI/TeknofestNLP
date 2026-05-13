@@ -7,7 +7,7 @@ from urllib import error, request
 
 OLLAMA_EMBED_URL = "http://localhost:11434/api/embed"
 DEFAULT_EMBED_MODEL = "qwen3-embedding:0.6b"
-DEFAULT_SOURCE_CSV = Path("data/processed/mimic_cxr_text_only_tr_gemini.csv")
+DEFAULT_SOURCE_CSV = Path("data/processed/mimic_cxr_text_only_tr.csv")
 DEFAULT_INDEX_PATH = Path("data/processed/semantic_search_index.json")
 
 

@@ -529,7 +529,7 @@ def home() -> str:
       </div>
       <div class="status-box">
         <div class="k">Değerlendirme</div>
-        <div class="v">Ollama / ministral-3:14b</div>
+        <div class="v">Ollama / qwen3.5:9b</div>
       </div>
       <div class="status-box">
         <div class="k">Semantik Arama</div>
