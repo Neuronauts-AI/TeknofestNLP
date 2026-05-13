@@ -18,10 +18,10 @@ Bu repo Apache License 2.0 ile lisanslanmistir. Ayrintilar icin [LICENSE](LICENS
 
 ### Veri Hazirligi
 
-- MIMIC-CXR kaynakli rapor verileri cekildi.
-- Metin odakli CSV ciktilari uretildi.
-- Turkce rapor verisi olusturuldu.
-- Veri klasorleri `app/`, `data/`, `docs/`, `scripts/` olarak duzenlendi.
+- Yerel `Neuronauts/` veri klasoru ana kaynak olarak belirlendi.
+- RTF raporlar, WAV sesler ve PNG goruntuler hasta numarasina gore eslestiriliyor.
+- Eski CSV kaynaklari uygulama akişindan cikarildi.
+- Veri klasorleri `app/`, `data/`, `docs/` ve lokal `Neuronauts/` kaynagi etrafinda duzenlendi.
 - Uygulama yalnizca lokal calisan LLM/embedding modellerini kullanacak sekilde sadeleştirildi.
 
 ### Modül 1 - Rapor Uretim Demo Katmani
@@ -30,7 +30,7 @@ Bu repo Apache License 2.0 ile lisanslanmistir. Ayrintilar icin [LICENSE](LICENS
 - Tarayici uzerinden kullanilan demo arayuzu eklendi.
 - Kullanici `Bulgular` ve `Sonuc` alanlarini doldurup rapor uretebiliyor.
 - Ornek veri yukleme, rapor gecmisi ve canli akis iskeleti hazirlandi.
-- `Örnekleri Yenile` akisi veri setinden rastgele ornek getirecek sekilde guncellendi.
+- `Örnekleri Yenile` akisi `Neuronauts/Raporlar` altindaki RTF raporlardan rastgele ornek getirecek sekilde guncellendi.
 
 ### Rapor Uygunluk / Gerceklik Degerlendirmesi
 
@@ -89,6 +89,7 @@ Mevcut temel sinir:
 - Dusuk kaliteli veya anlasilmasi zor seste medikal Turkce terimlerde bozulmalar gorulebiliyor.
 - Bu durum sonraki rapor uygunluk skoru ve uyari sistemini de etkiliyor.
 - Semantik arama otomatik degil; kullanici sorguyu elle girerek ayri panelden calistirir.
+- Semantik arama indeksi `Neuronauts/Raporlar` altindaki lokal raporlardan olusturulur.
 
 ## Yapilacaklar
 
@@ -137,10 +138,9 @@ app/
   module2/     Ollama tabanli degerlendirme ve uyari bilesenleri
   prompts/     LLM prompt dosyalari
 data/
-  raw/         Ham veri ve lokalde tutulan girdiler
-  processed/   Islenmis veri ve benchmark girdileri
+  processed/   Runtime indeks ve audit log ciktilari
 docs/          Proje ozeti, referans raporlar ve stratejik belgeler
-scripts/       Yardimci veri cekme ve veri goruntuleme scriptleri
+Neuronauts/    Lokal hasta raporlari, sesleri ve goruntuleri; git disinda tutulur
 ```
 
 ## Calistirma

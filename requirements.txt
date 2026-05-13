@@ -1,8 +1,6 @@
-datasets
-Pillow
-rich
 fastapi
 uvicorn
+websockets
 python-multipart
 transformers
 torch

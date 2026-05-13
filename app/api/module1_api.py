@@ -1,4 +1,3 @@
-import csv
 import json
 import random
 import tempfile
@@ -11,6 +10,7 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
 from app.module1.asr_whisper import DEFAULT_ASR_MODEL, transcribe_audio_file
+from app.module1.neuronauts_dataset import DEFAULT_NEURONAUTS_ROOT, load_neuronauts_cases
 from app.module1.transcript_sections import parse_transcript_sections
 from app.module2.ollama_style_client import (
     DEFAULT_MODEL as DEFAULT_OLLAMA_MODEL,
@@ -28,7 +28,7 @@ from app.module2.semantic_search_client import (
 
 
 app = FastAPI(title="Module 1 - Report Generation API", version="0.5.0")
-DATASET_PATH = Path("data/processed/module1/all.csv")
+DATASET_PATH = DEFAULT_NEURONAUTS_ROOT
 AUDIT_LOG_PATH = Path("data/processed/audit_logs/module1_audit_log.jsonl")
 REPORT_HISTORY_LIMIT = 20
 report_history: deque[dict] = deque(maxlen=REPORT_HISTORY_LIMIT)
@@ -150,20 +150,7 @@ def load_recent_audit_logs(limit: int = 20) -> list[dict]:
 
 
 def load_sample_reports(limit: int = 5) -> list[dict[str, str]]:
-    if not DATASET_PATH.exists():
-        return []
-
-    with DATASET_PATH.open("r", encoding="utf-8-sig", newline="") as csv_file:
-        reader = csv.DictReader(csv_file)
-        all_samples = [
-            {
-                "id": str(index),
-                "findings_tr": row.get("findings_tr", ""),
-                "impression_tr": row.get("impression_tr", ""),
-                "report_tr": row.get("report_tr", ""),
-            }
-            for index, row in enumerate(reader, start=1)
-        ]
+    all_samples = load_neuronauts_cases(DATASET_PATH)
 
     if len(all_samples) <= limit:
         return all_samples

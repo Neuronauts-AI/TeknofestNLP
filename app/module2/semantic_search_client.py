@@ -1,14 +1,15 @@
-import csv
 import json
 import math
 from pathlib import Path
 from urllib import error, request
 
+from app.module1.neuronauts_dataset import DEFAULT_NEURONAUTS_ROOT, load_neuronauts_cases
+
 
 OLLAMA_EMBED_URL = "http://localhost:11434/api/embed"
 DEFAULT_EMBED_MODEL = "qwen3-embedding:0.6b"
-DEFAULT_SOURCE_CSV = Path("data/processed/mimic_cxr_text_only_tr.csv")
-DEFAULT_INDEX_PATH = Path("data/processed/semantic_search_index.json")
+DEFAULT_SOURCE_ROOT = DEFAULT_NEURONAUTS_ROOT
+DEFAULT_INDEX_PATH = Path("data/processed/neuronauts_semantic_search_index.json")
 
 
 def pick_text(row: dict, *keys: str) -> str:
@@ -58,51 +59,58 @@ def cosine_similarity(left: list[float], right: list[float]) -> float:
     return dot / (left_norm * right_norm)
 
 
-def load_rows(csv_path: Path, limit: int) -> list[dict]:
+def load_rows(source_root: Path, limit: int) -> list[dict]:
+    cases = load_neuronauts_cases(source_root)
     rows = []
-    with csv_path.open("r", encoding="utf-8-sig", newline="") as csv_file:
-        reader = csv.DictReader(csv_file)
-        for index, row in enumerate(reader, start=1):
-            if limit and index > limit:
-                break
-            findings = pick_text(row, "findings_tr", "findings")
-            impression = pick_text(row, "impression_tr", "impression")
-            report_text = build_report_text(findings, impression)
-            if not report_text:
-                continue
-            rows.append(
-                {
-                    "row": index,
-                    "findings": findings,
-                    "impression": impression,
-                    "report_text": report_text,
-                }
-            )
+    for index, row in enumerate(cases, start=1):
+        if limit and index > limit:
+            break
+        findings = pick_text(row, "findings_tr", "findings")
+        impression = pick_text(row, "impression_tr", "impression")
+        report_text = build_report_text(findings, impression)
+        if not report_text:
+            continue
+        rows.append(
+            {
+                "row": index,
+                "case_id": row.get("id", str(index)),
+                "findings": findings,
+                "impression": impression,
+                "report_text": report_text,
+                "source_report_path": row.get("source_report_path", ""),
+                "image_path": row.get("image_path", ""),
+                "audio_path": row.get("audio_path", ""),
+            }
+        )
     return rows
 
 
 def build_index(
-    csv_path: Path = DEFAULT_SOURCE_CSV,
+    source_root: Path = DEFAULT_SOURCE_ROOT,
     output_path: Path = DEFAULT_INDEX_PATH,
     model: str = DEFAULT_EMBED_MODEL,
     limit: int = 0,
     batch_size: int = 32,
 ) -> dict:
-    rows = load_rows(csv_path, limit)
+    rows = load_rows(source_root, limit)
     embeddings: list[list[float]] = []
     for batch in batched([row["report_text"] for row in rows], batch_size):
         embeddings.extend(embed_texts(batch, model))
 
     payload = {
         "model": model,
-        "source_csv": str(csv_path),
+        "source_root": str(source_root),
         "count": len(rows),
         "items": [
             {
                 "row": row["row"],
+                "case_id": row["case_id"],
                 "findings": row["findings"],
                 "impression": row["impression"],
                 "report_text": row["report_text"],
+                "source_report_path": row["source_report_path"],
+                "image_path": row["image_path"],
+                "audio_path": row["audio_path"],
                 "embedding": embedding,
             }
             for row, embedding in zip(rows, embeddings)
@@ -113,10 +121,10 @@ def build_index(
     return {"index_path": str(output_path), "count": len(rows), "model": model}
 
 
-def ensure_index(index_path: Path = DEFAULT_INDEX_PATH, source_csv: Path = DEFAULT_SOURCE_CSV) -> Path:
+def ensure_index(index_path: Path = DEFAULT_INDEX_PATH, source_root: Path = DEFAULT_SOURCE_ROOT) -> Path:
     if index_path.exists():
         return index_path
-    build_index(csv_path=source_csv, output_path=index_path)
+    build_index(source_root=source_root, output_path=index_path)
     return index_path
 
 
@@ -129,10 +137,14 @@ def query_index(index_path: Path, text: str, model: str = DEFAULT_EMBED_MODEL, t
         scored.append(
             {
                 "row": item["row"],
+                "case_id": item.get("case_id", str(item["row"])),
                 "score": round(score, 4),
                 "findings": item["findings"],
                 "impression": item["impression"],
                 "report_preview": item["report_text"][:320],
+                "source_report_path": item.get("source_report_path", ""),
+                "image_path": item.get("image_path", ""),
+                "audio_path": item.get("audio_path", ""),
             }
         )
     scored.sort(key=lambda item: item["score"], reverse=True)

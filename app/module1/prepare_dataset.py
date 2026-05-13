@@ -3,9 +3,16 @@ import csv
 import json
 import random
 from pathlib import Path
+import sys
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from app.module1.neuronauts_dataset import DEFAULT_NEURONAUTS_ROOT, load_neuronauts_cases
 
 
-DEFAULT_INPUT = Path("data/processed/mimic_cxr_text_only_tr.csv")
+DEFAULT_INPUT = DEFAULT_NEURONAUTS_ROOT
 DEFAULT_OUTPUT_DIR = Path("data/processed/module1")
 DEFAULT_SEED = 42
 DEFAULT_VAL_RATIO = 0.1
@@ -13,7 +20,7 @@ DEFAULT_VAL_RATIO = 0.1
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", type=Path, default=DEFAULT_INPUT, help="Input Turkish CSV path.")
+    parser.add_argument("--input", type=Path, default=DEFAULT_INPUT, help="Input Neuronauts data root.")
     parser.add_argument(
         "--output-dir",
         type=Path,
@@ -41,12 +48,10 @@ def build_report(findings: str, impression: str) -> str:
 def main() -> None:
     args = parse_args()
     if not args.input.exists():
-        print(f"Girdi dosyasi bulunamadi: {args.input}")
+        print(f"Girdi klasoru bulunamadi: {args.input}")
         return
 
-    with args.input.open("r", encoding="utf-8-sig", newline="") as csv_file:
-        reader = csv.DictReader(csv_file)
-        rows = list(reader)
+    rows = load_neuronauts_cases(args.input)
 
     cleaned_rows = []
     for row in rows:

@@ -3,9 +3,9 @@ NEURONAUTS AI - PROJE DURUM ÖZETİ
 Bu projede şu ana kadar Türkçe klinik NLP odaklı bir rapor üretim ve değerlendirme prototipi geliştirildi.
 
 1. Veri hazırlığı
-- MIMIC-CXR kaynaklı rapor verileri çekildi.
-- Metin odaklı CSV çıktıları üretildi.
-- Türkçe rapor verisi oluşturuldu ve module1 veri klasörüne düzenli şekilde hazırlandı.
+- Yerel Neuronauts veri klasörü ana kaynak olarak belirlendi.
+- RTF raporlar, WAV sesler ve PNG görüntüler hasta numarasına göre eşleştirildi.
+- Eski CSV kaynakları uygulama akışından çıkarıldı.
 
 2. Modül 1 - Rapor üretim demo katmanı
 - FastAPI tabanlı bir backend kuruldu.
